@@ -1,8 +1,19 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import os
 
 app = FastAPI()
+
+# potrzebne do obejscia CORS'a (przy testach na chromie)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # klasa psa
 
@@ -59,3 +70,10 @@ def szukaj_psow(wiek: int = 100, plec: str = "", kolor: str = ""):
             znalezione.append(pies)
 
     return znalezione
+
+
+@app.get("/kolory")
+def pobierz_dostepne_kolory():
+    wszystkie_psy = wczytaj_psy()
+    unikalne_kolory = {p['kolor'] for p in wszystkie_psy}
+    return sorted(list(unikalne_kolory))
