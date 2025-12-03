@@ -1,0 +1,15 @@
+.DS_Store
+.idea/
+.vscode/
+
+backend/__pycache__/
+backend/*.pyc
+backend/venv/
+backend/.venv/
+backend/env/
+
+frontend/build/
+frontend/.dart_tool/
+frontend/.pub/
+frontend/.packages
+frontend/pubspec.lock
