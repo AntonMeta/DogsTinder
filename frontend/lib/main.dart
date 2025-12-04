@@ -78,7 +78,7 @@ class _MenuGlowneState extends State<MenuGlowne> {
   int filtrWiek = 20;
 
   // tmp lista ulubionych
-  List<Pies> _ulubionePsy = [];
+  final List<Pies> _ulubionePsy = [];
 
   // toggle fav pies
   void _przelaczUlubionego(Pies pies) {
