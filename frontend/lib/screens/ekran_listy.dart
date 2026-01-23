@@ -43,7 +43,7 @@ class _EkranListyState extends State<EkranListy> {
         'plec': widget.plec,
         'kolor': widget.kolor,
       };
-      final uri = Uri.http('127.0.0.1:8000', '/szukaj', queryParams);
+      final uri = Uri.http('0.0.0.0:8000', '/szukaj', queryParams);
       final odpowiedz = await http.get(uri);
 
       if (odpowiedz.statusCode == 200) {

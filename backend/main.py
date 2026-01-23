@@ -1,11 +1,14 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-import os
+from sqlalchemy.orm import Session
+from sqlalchemy import or_
+
+from database import get_db, Base, engine
+import models
+
+models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
-
-# potrzebne do obejscia CORS'a (przy testach na chromie)
 
 app.add_middleware(
     CORSMiddleware,
@@ -15,65 +18,40 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# klasa psa
 
-
-class PiesData(BaseModel):
-    imie: str
-    rasa: str
-    wiek: int
-    plec: str
-    kolor: str
-
-# wczytywanie bazy z pliku
-
-
-def wczytaj_psy():
-    sciezka = "psy.csv"
-    psy = []
-    if os.path.exists(sciezka):
-        with open(sciezka, 'r', encoding='utf-8') as f:
-            for linia in f:
-                dane = linia.strip().split(',')
-                if len(dane) == 5:
-                    psy.append({
-                        "imie": dane[0],
-                        "rasa": dane[1],
-                        "wiek": int(dane[2]),
-                        "plec": dane[3],
-                        "kolor": dane[4]
-                    })
-    return psy
-
-# endpoint: daj wszystkie psy
-
-
-@app.get("/psy")
-def pobierz_psy():
-    return wczytaj_psy()
-
-# endpoint:filtrowanie
+@app.get("/kolory")
+def pobierz_kolory(db: Session = Depends(get_db)):
+    kolory = db.query(models.PiesDB.kolor).distinct().order_by(
+        models.PiesDB.kolor).all()
+    return [k[0] for k in kolory]
 
 
 @app.get("/szukaj")
-def szukaj_psow(wiek: int = 100, plec: str = "", kolor: str = ""):
-    wszystkie = wczytaj_psy()
-    znalezione = []
+def szukaj_psow(
+    wiek: int,
+    plec: str,
+    kolor: str,
+    db: Session = Depends(get_db)
+):
+    query = db.query(models.PiesDB)
 
-    for pies in wszystkie:
-        zgodnosc_plec = (plec == "" or pies['plec'].lower() == plec.lower())
-        zgodnosc_kolor = (
-            kolor == "" or pies['kolor'].lower() == kolor.lower())
-        zgodnosc_wiek = (pies['wiek'] <= wiek)
+    query = query.filter(models.PiesDB.wiek <= wiek)
+    if plec and plec.lower() != "":
+        query = query.filter(models.PiesDB.plec == plec)
+    if kolor and kolor.lower() != "":
+        query = query.filter(models.PiesDB.kolor == kolor)
 
-        if zgodnosc_plec and zgodnosc_kolor and zgodnosc_wiek:
-            znalezione.append(pies)
+    psy = query.all()
 
-    return znalezione
+    return psy
+
+# TODO: Admin panel with an ability to add a record
 
 
-@app.get("/kolory")
-def pobierz_dostepne_kolory():
-    wszystkie_psy = wczytaj_psy()
-    unikalne_kolory = {p['kolor'] for p in wszystkie_psy}
-    return sorted(list(unikalne_kolory))
+# @app.post("/dodaj")
+# def dodaj_psa(imie: str, rasa: str, wiek: int, plec: str, kolor: str, db: Session = Depends(get_db)):
+#     nowy_pies = models.PiesDB(imie=imie, rasa=rasa,
+#                               wiek=wiek, plec=plec, kolor=kolor)
+#     db.add(nowy_pies)
+#     db.commit()
+#     return {"message": "Pies dodany!"}
