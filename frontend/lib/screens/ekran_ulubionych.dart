@@ -20,7 +20,7 @@ class _EkranUlubionychState extends State<EkranUlubionych> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Moje Ulubione ❤️")),
+      appBar: AppBar(title: const Text("Moje Ulubione")),
       body: widget.ulubionePsy.isEmpty
           ? Center(
               child: Column(

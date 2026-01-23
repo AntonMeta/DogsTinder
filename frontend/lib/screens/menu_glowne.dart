@@ -3,6 +3,7 @@ import 'package:frontend/models/pies.dart';
 import 'package:frontend/screens/ekran_filtrow.dart';
 import 'package:frontend/screens/ekran_listy.dart';
 import 'package:frontend/screens/ekran_ulubionych.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class MenuGlowne extends StatefulWidget {
   const MenuGlowne({super.key});
@@ -34,115 +35,131 @@ class _MenuGlowneState extends State<MenuGlowne> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Tinder dla Psów 🐶"),
-        centerTitle: true,
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _budujPrzycisk(
-              icon: Icons.tune,
-              label: "Ustaw Filtry",
-              color: Colors.teal.shade100,
-              textColor: Colors.teal.shade900,
-              onTap: () async {
-                final wynik = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => EkranFiltrow(
-                      obecnaPlec: filtrPlec,
-                      obecnyKolor: filtrKolor,
-                      obecnyWiek: filtrWiek,
-                    ),
-                  ),
-                );
-                if (wynik != null) {
-                  setState(() {
-                    filtrPlec = wynik['plec'];
-                    filtrKolor = wynik['kolor'];
-                    filtrWiek = wynik['wiek'];
-                  });
-                }
-              },
-            ),
-            const SizedBox(height: 20),
-            _budujPrzycisk(
-              icon: Icons.search,
-              label: "Szukaj Psów",
-              color: Colors.teal,
-              textColor: Colors.white,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => EkranListy(
-                      plec: filtrPlec,
-                      kolor: filtrKolor,
-                      wiek: filtrWiek,
-                      ulubionePsy: _ulubionePsy,
-                      onToggleFavorite: _przelaczUlubionego,
-                    ),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 20),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 30.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start, // Teksty do lewej
+            children: [
+              const Spacer(),
+              // TYTUŁ JAK Z CZASOPISMA
+              Text(
+                "Dogs\nTinder.",
+                style: GoogleFonts.poppins(
+                  fontSize: 56,
+                  fontWeight: FontWeight.w800,
+                  height: 1.0, // Zwarte linie
+                  color: Colors.black,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                "Znajdź swojego przyjaciela.",
+                style: TextStyle(
+                  fontSize: 18,
+                  color: Colors.grey[500],
+                  fontWeight: FontWeight.w300,
+                ),
+              ),
+              const Spacer(),
 
-            // przycisk ulubione
-            _budujPrzycisk(
-              icon: Icons.favorite,
-              label: "Moje Ulubione (${_ulubionePsy.length})",
-              color: Colors.pink,
-              textColor: Colors.white,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => EkranUlubionych(
-                      ulubionePsy: _ulubionePsy,
-                      onToggleFavorite: _przelaczUlubionego,
+              // PRZYCISKI (Pełna szerokość)
+              _budujPrzycisk(
+                label: "SZUKAJ PARY",
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => EkranListy(
+                        plec: filtrPlec,
+                        kolor: filtrKolor,
+                        wiek: filtrWiek,
+                        ulubionePsy: _ulubionePsy,
+                        onToggleFavorite: _przelaczUlubionego,
+                      ),
                     ),
-                  ),
-                );
-              },
-            ),
-
-            const SizedBox(height: 30),
-            Text(
-              "Aktywne filtry:\nPłeć: ${filtrPlec.isEmpty ? 'Każda' : filtrPlec}, "
-              "Kolor: ${filtrKolor.isEmpty ? 'Każdy' : filtrKolor}, "
-              "Wiek < $filtrWiek",
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey[600]),
-            )
-          ],
+                  );
+                },
+                isPrimary: true, // Czarny przycisk
+              ),
+              const SizedBox(height: 15),
+              _budujPrzycisk(
+                label: "FILTRY",
+                onTap: () async {
+                  final wynik = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => EkranFiltrow(
+                        obecnaPlec: filtrPlec,
+                        obecnyKolor: filtrKolor,
+                        obecnyWiek: filtrWiek,
+                      ),
+                    ),
+                  );
+                  if (wynik != null) {
+                    setState(() {
+                      filtrPlec = wynik['plec'];
+                      filtrKolor = wynik['kolor'];
+                      filtrWiek = wynik['wiek'];
+                    });
+                  }
+                },
+                isPrimary: false, // Biały przycisk (Outline)
+              ),
+              const SizedBox(height: 15),
+              _budujPrzycisk(
+                label: "MOJE ULUBIONE (${_ulubionePsy.length})",
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => EkranUlubionych(
+                        ulubionePsy: _ulubionePsy,
+                        onToggleFavorite: _przelaczUlubionego,
+                      ),
+                    ),
+                  );
+                },
+                isPrimary: false,
+              ),
+              const SizedBox(height: 40),
+            ],
+          ),
         ),
       ),
     );
   }
 
+  // Minimalistyczny widget przycisku
   Widget _budujPrzycisk({
-    required IconData icon,
     required String label,
-    required Color color,
-    required Color textColor,
     required VoidCallback onTap,
+    required bool isPrimary,
   }) {
     return SizedBox(
-      width: 260,
-      height: 60,
-      child: ElevatedButton.icon(
-        icon: Icon(icon, size: 28),
-        label: Text(label, style: const TextStyle(fontSize: 18)),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: color,
-          foregroundColor: textColor,
-        ),
-        onPressed: onTap,
-      ),
+      width: double.infinity, // Rozciągnij na max
+      height: 56,
+      child: isPrimary
+          ? ElevatedButton(
+              onPressed: onTap,
+              child: Text(label),
+            )
+          : OutlinedButton(
+              onPressed: onTap,
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Colors.black, width: 1.5),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                foregroundColor: Colors.black,
+              ),
+              child: Text(
+                label,
+                style: const TextStyle(
+                    fontWeight: FontWeight.w600, letterSpacing: 1.0),
+              ),
+            ),
     );
   }
 }

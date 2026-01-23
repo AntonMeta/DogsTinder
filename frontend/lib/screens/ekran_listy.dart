@@ -95,7 +95,7 @@ class _EkranListyState extends State<EkranListy> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Szukaj pary ❤️")),
+      appBar: AppBar(title: const Text("Szukaj pary")),
       body: ladowanie
           ? const Center(child: CircularProgressIndicator())
           : blad.isNotEmpty
