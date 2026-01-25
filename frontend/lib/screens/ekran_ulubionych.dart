@@ -45,8 +45,8 @@ class _EkranUlubionychState extends State<EkranUlubionych> {
                   child: KartaPsa(
                     pies: pies,
                     czyUlubiony: true, // Tu zawsze jest true
-                    trybUsuwania:
-                        true, // <--- WAŻNE: Włączamy przycisk usuwania!
+                    trybUsuwania: true,
+                    czySerce: true, // <--- WAŻNE: Włączamy przycisk usuwania!
                     onFavoritePressed: () {
                       widget.onToggleFavorite(pies);
                       setState(() {}); // Odświeżamy, żeby usunięty pies zniknął

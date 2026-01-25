@@ -45,7 +45,6 @@ def szukaj_psow(
 
     return psy
 
-# TODO: Admin panel with an ability to add a record
 
 
 # @app.post("/dodaj")

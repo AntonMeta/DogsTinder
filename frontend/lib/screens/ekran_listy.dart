@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
+import 'package:http/http.dart' as http;
 import 'package:frontend/models/pies.dart';
 import 'package:frontend/widgets/karta_psa.dart';
-import 'package:http/http.dart' as http;
 
 class EkranListy extends StatefulWidget {
   final String plec;
@@ -29,6 +29,7 @@ class _EkranListyState extends State<EkranListy> {
   List<Pies> listaPsow = [];
   bool ladowanie = true;
   String blad = '';
+  bool _czyKoniec = false;
 
   @override
   void initState() {
@@ -43,18 +44,24 @@ class _EkranListyState extends State<EkranListy> {
         'plec': widget.plec,
         'kolor': widget.kolor,
       };
-      final uri = Uri.http('0.0.0.0:8000', '/szukaj', queryParams);
+      final uri = Uri.http('localhost:8000', '/szukaj', queryParams);
+
       final odpowiedz = await http.get(uri);
 
       if (odpowiedz.statusCode == 200) {
-        final List<dynamic> daneJson =
-            jsonDecode(utf8.decode(odpowiedz.bodyBytes));
+        final bodyDecoded = utf8.decode(odpowiedz.bodyBytes);
+        final List<dynamic> daneJson = json.decode(bodyDecoded);
+
         setState(() {
           listaPsow = daneJson.map((json) => Pies.fromJson(json)).toList();
           ladowanie = false;
+          _czyKoniec = false;
         });
       } else {
-        throw Exception('Błąd serwera: ${odpowiedz.statusCode}');
+        setState(() {
+          blad = 'Błąd serwera: ${odpowiedz.statusCode}';
+          ladowanie = false;
+        });
       }
     } catch (e) {
       setState(() {
@@ -64,171 +71,128 @@ class _EkranListyState extends State<EkranListy> {
     }
   }
 
-  // Funkcja obsługująca przesunięcie karty
-  bool _onSwipe(
-      int previousIndex, int? currentIndex, CardSwiperDirection direction) {
+  bool _obslugaSwipe(
+    int previousIndex,
+    int? currentIndex,
+    CardSwiperDirection direction,
+  ) {
     final pies = listaPsow[previousIndex];
 
-    // Logika: Prawo = Ulubione, Lewo = Pomiń
     if (direction == CardSwiperDirection.right) {
-      // Jeśli psa nie ma jeszcze w ulubionych, dodajemy go
       if (!widget.ulubionePsy.contains(pies)) {
         widget.onToggleFavorite(pies);
 
-        // Opcjonalnie: Pokazujemy mały komunikat na dole ekranu
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("Dodano do ulubionych: ${pies.imie}! ❤️"),
+            content: Text("Polubiono: ${pies.imie}"),
             duration: const Duration(milliseconds: 500),
-            backgroundColor: Colors.pink,
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.black,
           ),
         );
       }
-    } else if (direction == CardSwiperDirection.left) {
-      // W lewo nic nie robimy (po prostu pomijamy)
-      // Ewentualnie można tu dodać logikę usuwania, jeśli chcemy
     }
 
-    return true; // Zwracamy true, żeby pozwolić na przesunięcie
+    return true;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Szukaj pary")),
+      appBar: AppBar(
+        title: const Text("Szukaj pary"),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        foregroundColor: Colors.black,
+      ),
       body: ladowanie
           ? const Center(child: CircularProgressIndicator())
           : blad.isNotEmpty
               ? Center(
                   child: Text(blad, style: const TextStyle(color: Colors.red)))
-              : listaPsow.isEmpty
-                  ? const Center(
-                      child: Text("Brak psów spełniających kryteria :(",
-                          style: TextStyle(fontSize: 18)))
-                  : Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Column(
-                        children: [
-                          Text(
-                            "Znaleziono: ${listaPsow.length} psiaków",
-                            style: TextStyle(color: Colors.grey[600]),
-                          ),
-                          const SizedBox(height: 10),
-                          Expanded(
-                            child: Stack(
-                              children: [
-                                // --- WARSTWA SPODNIA ---
-                                Center(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      const Icon(Icons.check_circle_outline,
-                                          size: 80, color: Colors.grey),
-                                      const SizedBox(height: 20),
-                                      const Text(
-                                        "To już wszystkie pieski!",
-                                        style: TextStyle(
-                                            fontSize: 20, color: Colors.grey),
-                                      ),
-                                      const SizedBox(height: 20),
-                                      ElevatedButton(
-                                        onPressed: () {
-                                          Navigator.pop(context);
-                                        },
-                                        child: const Text("WRÓĆ DO MENU"),
-                                      )
-                                    ],
-                                  ),
-                                ),
-
-                                // --- WARSTWA WIERZCHNIA ---
-                                CardSwiper(
+              : _czyKoniec
+                  ? _budujEkranKoncowy()
+                  : listaPsow.isEmpty
+                      ? const Center(
+                          child: Text("Brak psów spełniających kryteria"))
+                      : SafeArea(
+                          child: Column(
+                            children: [
+                              Flexible(
+                                child: CardSwiper(
                                   cardsCount: listaPsow.length,
                                   isLoop: false,
-                                  onSwipe: _onSwipe,
-                                  numberOfCardsDisplayed: listaPsow.length < 3
-                                      ? listaPsow.length
-                                      : 3,
+                                  onEnd: () {
+                                    setState(() {
+                                      _czyKoniec = true;
+                                    });
+                                  },
                                   backCardOffset: const Offset(0, 40),
-                                  padding: const EdgeInsets.only(bottom: 40),
-
-                                  // --- POPRAWIONY BUILDER ---
+                                  padding: const EdgeInsets.all(24.0),
+                                  onSwipe: _obslugaSwipe,
                                   cardBuilder: (context, index,
                                       percentThresholdX, percentThresholdY) {
                                     final pies = listaPsow[index];
-
-                                    Widget baseCard = SizedBox(
-                                      width: double.infinity,
-                                      height: 500,
-                                      child: KartaPsa(
-                                        pies: pies,
-                                        czyUlubiony:
-                                            widget.ulubionePsy.contains(pies),
-                                        onFavoritePressed: () {},
-                                      ),
-                                    );
-
-                                    // POPRAWKA 1: Dodane .toDouble()
-                                    double dragDistance =
-                                        percentThresholdX.toDouble();
-
-                                    // Obliczamy opacity (przezroczystość)
-                                    double opacity = (dragDistance.abs() / 150)
-                                        .clamp(0.0, 0.5);
-
-                                    Color tintColor = Colors.transparent;
-                                    IconData? tintIcon;
-
-                                    if (dragDistance > 0) {
-                                      tintColor = Colors.green;
-                                      tintIcon = Icons.check_circle;
-                                    } else if (dragDistance < 0) {
-                                      tintColor = Colors.red;
-                                      tintIcon = Icons.cancel;
-                                    }
-
-                                    return Stack(
-                                      children: [
-                                        baseCard,
-                                        if (opacity > 0)
-                                          Positioned.fill(
-                                            child: Container(
-                                              decoration: BoxDecoration(
-                                                color: tintColor
-                                                    .withOpacity(opacity),
-                                                borderRadius:
-                                                    BorderRadius.circular(12),
-                                              ),
-                                              child: Center(
-                                                child: Icon(
-                                                  tintIcon,
-                                                  // POPRAWKA 2: clamp przeniesiony do środka
-                                                  color: Colors.white
-                                                      .withOpacity(
-                                                          (opacity * 1.8)
-                                                              .clamp(0.0, 1.0)),
-                                                  size: 100,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                      ],
+                                    return KartaPsa(
+                                      key: ValueKey(pies.id),
+                                      pies: pies,
+                                      czyUlubiony:
+                                          widget.ulubionePsy.contains(pies),
+                                      czySerce: false,
+                                      onFavoritePressed: () =>
+                                          widget.onToggleFavorite(pies),
+                                      swipeProgress:
+                                          percentThresholdX as double,
                                     );
                                   },
                                 ),
-                              ],
-                            ),
+                              ),
+                              const Padding(
+                                padding: EdgeInsets.only(bottom: 20.0),
+                                child: Text(
+                                  "👈 Pomiń   |   Polub 👉",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.grey,
+                                    letterSpacing: 1.2,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                          const Text(
-                            "👈 Pomiń   |   Polub 👉",
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.grey),
-                          ),
-                          const SizedBox(height: 20),
-                        ],
-                      ),
-                    ),
+                        ),
+    );
+  }
+
+  Widget _budujEkranKoncowy() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.check_circle_outline, size: 80, color: Colors.grey),
+          const SizedBox(height: 20),
+          const Text(
+            "To już wszystkie psy!",
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            "Zmień filtry lub odśwież listę.",
+            style: TextStyle(color: Colors.grey),
+          ),
+          const SizedBox(height: 30),
+          ElevatedButton.icon(
+            onPressed: szukajPsow,
+            icon: const Icon(Icons.refresh),
+            label: const Text("ODŚWIEŻ"),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.black,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+            ),
+          )
+        ],
+      ),
     );
   }
 }

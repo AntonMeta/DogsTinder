@@ -7,13 +7,18 @@ class KartaPsa extends StatefulWidget {
   final bool czyUlubiony;
   final VoidCallback onFavoritePressed;
   final bool trybUsuwania;
+  final bool czySerce;
+
+  final double swipeProgress;
 
   const KartaPsa({
     super.key,
     required this.pies,
     required this.czyUlubiony,
     required this.onFavoritePressed,
+    required this.czySerce,
     this.trybUsuwania = false,
+    this.swipeProgress = 0.0,
   });
 
   @override
@@ -21,184 +26,176 @@ class KartaPsa extends StatefulWidget {
 }
 
 class _KartaPsaState extends State<KartaPsa> {
-  // Stan do obsługi widoczności opisu
   bool _pokazOpis = false;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.black12, width: 1),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Stack(
-        children: [
-          // --- WARSTWA 1: GŁÓWNA TREŚĆ (FOTO/DANE) ---
-          Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 24.0, vertical: 30.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Spacer(),
+    final double opacity = widget.swipeProgress.abs().clamp(0.0, 1.0);
+    final bool isSwipeRight = widget.swipeProgress > 0;
 
-                // IMIĘ
-                Text(
-                  widget.pies.imie,
-                  style: GoogleFonts.poppins(
-                    fontSize: 42,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                    height: 1.0,
-                  ),
-                ),
-
-                // RASA
-                Text(
-                  widget.pies.rasa.toUpperCase(),
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey[500],
-                    letterSpacing: 2.0,
-                  ),
-                ),
-                const SizedBox(height: 30),
-
-                // DETALE
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _simpleInfo("WIEK", "${widget.pies.wiek} lata"),
-                    _simpleInfo("PŁEĆ", widget.pies.plec),
-                    _simpleInfo("KOLOR", widget.pies.kolor),
-                  ],
-                ),
-
-                const Spacer(),
-                const Divider(),
-
-                // PRZYCISK ULUBIONE / USUŃ
-                Padding(
-                  padding: const EdgeInsets.only(top: 10.0),
-                  child: Center(
-                    child: widget.trybUsuwania
-                        ? TextButton.icon(
-                            onPressed: widget.onFavoritePressed,
-                            icon: const Icon(Icons.close, color: Colors.black),
-                            label: const Text("USUŃ",
-                                style: TextStyle(color: Colors.black)),
-                          )
-                        : Icon(
-                            widget.czyUlubiony
-                                ? Icons.favorite
-                                : Icons.favorite_border,
-                            color: widget.czyUlubiony
-                                ? Colors.black
-                                : Colors.grey[300],
-                            size: 40,
-                          ),
-                  ),
-                ),
-              ],
+    return LayoutBuilder(builder: (context, constraints) {
+      return Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.black12, width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 15,
+              offset: const Offset(0, 8),
+            )
+          ],
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // --- WARSTWA 1: ZDJĘCIE ---
+            Image.network(
+              widget.pies.zdjecieUrl,
+              fit: BoxFit.cover,
+              errorBuilder: (ctx, err, stack) => Container(
+                color: Colors.grey[200],
+                child: const Center(
+                    child: Icon(Icons.pets, size: 50, color: Colors.grey)),
+              ),
             ),
-          ),
 
-          // --- PRZYCISK INFO (IKONA 'i') ---
-          // Pojawia się tylko, gdy opis jest ukryty
-          AnimatedOpacity(
-            opacity: _pokazOpis ? 0.0 : 1.0,
-            duration: const Duration(milliseconds: 200),
-            child: Align(
-              alignment: Alignment.topRight,
+            // --- WARSTWA 2: GRADIENT FADE ---
+            Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  stops: [0.4, 1.0],
+                  colors: [Colors.transparent, Colors.white],
+                ),
+              ),
+            ),
+
+            // --- WARSTWA 3: TREŚĆ KARTY ---
+            Align(
+              alignment: Alignment.bottomLeft,
               child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: IconButton(
-                  icon: const Icon(Icons.info_outline,
-                      color: Colors.black, size: 28),
-                  onPressed: () {
-                    setState(() {
-                      _pokazOpis = true;
-                    });
-                  },
-                ),
-              ),
-            ),
-          ),
-
-          // --- WARSTWA 2: NAKŁADKA Z OPISEM (OVERLAY) ---
-          IgnorePointer(
-            ignoring: !_pokazOpis, // Klikalne tylko gdy widoczne
-            child: AnimatedOpacity(
-              duration: const Duration(milliseconds: 400),
-              curve: Curves.easeInOut,
-              opacity: _pokazOpis ? 1.0 : 0.0,
-              child: Container(
-                color: Colors.black.withOpacity(0.96), // Prawie czarne tło
-                padding: const EdgeInsets.all(30.0),
-                width: double.infinity,
-                height: double.infinity,
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 30),
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
-                      "BIO",
-                      style: GoogleFonts.poppins(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey[600],
-                        letterSpacing: 2.0,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      "O psie ${widget.pies.imie}",
-                      style: GoogleFonts.poppins(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white, // Biały tekst na czarnym
-                      ),
-                    ),
+                    Text(widget.pies.imie,
+                        style: GoogleFonts.poppins(
+                            fontSize: 42,
+                            fontWeight: FontWeight.bold,
+                            height: 1.0)),
+                    Text(widget.pies.rasa.toUpperCase(),
+                        style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            letterSpacing: 2,
+                            color: Colors.grey[600])),
                     const SizedBox(height: 20),
-                    Text(
-                      "To wspaniały pies, który szuka domu. Jest bardzo energiczny, uwielbia długie spacery i zabawę piłką. Idealny towarzysz dla aktywnych osób.",
-                      style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        height: 1.6,
-                        color: Colors.grey[300],
-                        fontWeight: FontWeight.w300,
-                      ),
-                      textAlign: TextAlign.left,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _simpleInfo("WIEK", "${widget.pies.wiek} lata"),
+                        _simpleInfo("PŁEĆ", widget.pies.plec),
+                        _simpleInfo("KOLOR", widget.pies.kolor),
+                      ],
                     ),
-                    const SizedBox(height: 40),
-
-                    // PRZYCISK ZAMKNIĘCIA (Biały Outline)
-                    Center(
-                      child: OutlinedButton.icon(
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Colors.white, width: 1),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 24, vertical: 12),
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _pokazOpis = false;
-                          });
-                        },
-                        icon: const Icon(Icons.close, size: 20),
-                        label: const Text("ZAMKNIJ",
-                            style: TextStyle(letterSpacing: 1.0)),
-                      ),
-                    )
+                    if (widget.czySerce) ...[
+                      const SizedBox(height: 20),
+                      const Divider(),
+                      Center(
+                        child: widget.trybUsuwania
+                            ? TextButton.icon(
+                                onPressed: widget.onFavoritePressed,
+                                icon: const Icon(Icons.close,
+                                    color: Colors.black),
+                                label: const Text("USUŃ",
+                                    style: TextStyle(color: Colors.black)))
+                            : IconButton(
+                                onPressed: widget.onFavoritePressed,
+                                icon: Icon(widget.czyUlubiony
+                                    ? Icons.favorite
+                                    : Icons.favorite_border),
+                                iconSize: 32,
+                                color: Colors.black),
+                      )
+                    ]
                   ],
                 ),
               ),
             ),
-          ),
+
+            // --- WARSTWA 4: OVERLAY SWIPE ---
+            if (opacity > 0.01)
+              Container(
+                color: (isSwipeRight ? Colors.red : Colors.grey.shade800)
+                    .withOpacity((opacity * 0.6).clamp(0.0, 0.8)),
+                child: Center(
+                  child: Transform.scale(
+                    scale: 1.0 + opacity,
+                    child: Icon(
+                      isSwipeRight ? Icons.favorite : Icons.close,
+                      color: (isSwipeRight ? Colors.red : Colors.grey.shade800)
+                          .withOpacity(opacity),
+                      size: 100,
+                    ),
+                  ),
+                ),
+              ),
+
+            // --- WARSTWA 5: PRZYCISKI I INFO ---
+            Positioned(
+              top: 16,
+              right: 16,
+              child: AnimatedOpacity(
+                opacity: _pokazOpis ? 0.0 : 1.0,
+                duration: const Duration(milliseconds: 200),
+                child: Container(
+                  decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.8),
+                      shape: BoxShape.circle),
+                  child: IconButton(
+                    icon: const Icon(Icons.info_outline, color: Colors.black),
+                    onPressed: () => setState(() => _pokazOpis = true),
+                  ),
+                ),
+              ),
+            ),
+
+            // --- WARSTWA 6: NAKŁADKA BIO ---
+            if (_pokazOpis) _buildOverlayBio(),
+          ],
+        ),
+      );
+    });
+  }
+
+  Widget _buildOverlayBio() {
+    return Container(
+      color: Colors.black.withOpacity(0.96),
+      padding: const EdgeInsets.all(30),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text("O PSIE",
+              style: GoogleFonts.poppins(color: Colors.grey, letterSpacing: 2)),
+          const SizedBox(height: 10),
+          Text(widget.pies.opis,
+              style: GoogleFonts.poppins(
+                  color: Colors.white, fontSize: 16, height: 1.6)),
+          const SizedBox(height: 30),
+          Center(
+            child: OutlinedButton(
+              style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  side: const BorderSide(color: Colors.white)),
+              onPressed: () => setState(() => _pokazOpis = false),
+              child: const Text("ZAMKNIJ"),
+            ),
+          )
         ],
       ),
     );
@@ -208,24 +205,13 @@ class _KartaPsaState extends State<KartaPsa> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 10,
-            color: Colors.grey[400],
-            fontWeight: FontWeight.bold,
-            letterSpacing: 1.0,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: Colors.black,
-          ),
-        ),
+        Text(label,
+            style: TextStyle(
+                fontSize: 10,
+                color: Colors.grey[400],
+                fontWeight: FontWeight.bold)),
+        Text(value,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
       ],
     );
   }

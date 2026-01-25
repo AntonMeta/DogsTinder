@@ -36,7 +36,7 @@ class _EkranFiltrowState extends State<EkranFiltrow> {
   //do autocomplete przy kolorze
   Future<void> pobierzKoloryZSerwera() async {
     try {
-      final url = Uri.parse('http://0.0.0.0:8000/kolory');
+      final url = Uri.parse('http://localhost:8000/kolory');
       final odpowiedz = await http.get(url);
       if (odpowiedz.statusCode == 200) {
         final List<dynamic> dane = jsonDecode(utf8.decode(odpowiedz.bodyBytes));
