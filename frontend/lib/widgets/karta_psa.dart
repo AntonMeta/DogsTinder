@@ -25,8 +25,40 @@ class KartaPsa extends StatefulWidget {
   State<KartaPsa> createState() => _KartaPsaState();
 }
 
-class _KartaPsaState extends State<KartaPsa> {
+class _KartaPsaState extends State<KartaPsa>
+    with SingleTickerProviderStateMixin {
   bool _pokazOpis = false;
+  late AnimationController _animController;
+  late Animation<Offset> _slideAnimation;
+  late Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.1),
+      end: Offset.zero,
+    ).animate(
+        CurvedAnimation(parent: _animController, curve: Curves.easeOutQuad));
+
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeIn));
+
+    _animController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -79,50 +111,56 @@ class _KartaPsaState extends State<KartaPsa> {
               alignment: Alignment.bottomLeft,
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(24, 0, 24, 30),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(widget.pies.imie,
-                        style: GoogleFonts.poppins(
-                            fontSize: 42,
-                            fontWeight: FontWeight.bold,
-                            height: 1.0)),
-                    Text(widget.pies.rasa.toUpperCase(),
-                        style: GoogleFonts.poppins(
-                            fontSize: 14,
-                            letterSpacing: 2,
-                            color: Colors.grey[600])),
-                    const SizedBox(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                child: SlideTransition(
+                  position: _slideAnimation,
+                  child: FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _simpleInfo("WIEK", "${widget.pies.wiek} lata"),
-                        _simpleInfo("PŁEĆ", widget.pies.plec),
-                        _simpleInfo("KOLOR", widget.pies.kolor),
+                        Text(widget.pies.imie,
+                            style: GoogleFonts.poppins(
+                                fontSize: 42,
+                                fontWeight: FontWeight.bold,
+                                height: 1.0)),
+                        Text(widget.pies.rasa.toUpperCase(),
+                            style: GoogleFonts.poppins(
+                                fontSize: 14,
+                                letterSpacing: 2,
+                                color: Colors.grey[600])),
+                        const SizedBox(height: 20),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            _simpleInfo("WIEK", "${widget.pies.wiek} lata"),
+                            _simpleInfo("PŁEĆ", widget.pies.plec),
+                            _simpleInfo("KOLOR", widget.pies.kolor),
+                          ],
+                        ),
+                        if (widget.czySerce) ...[
+                          const SizedBox(height: 20),
+                          const Divider(),
+                          Center(
+                            child: widget.trybUsuwania
+                                ? TextButton.icon(
+                                    onPressed: widget.onFavoritePressed,
+                                    icon: const Icon(Icons.close,
+                                        color: Colors.black),
+                                    label: const Text("USUŃ",
+                                        style: TextStyle(color: Colors.black)))
+                                : IconButton(
+                                    onPressed: widget.onFavoritePressed,
+                                    icon: Icon(widget.czyUlubiony
+                                        ? Icons.favorite
+                                        : Icons.favorite_border),
+                                    iconSize: 32,
+                                    color: Colors.black),
+                          )
+                        ]
                       ],
                     ),
-                    if (widget.czySerce) ...[
-                      const SizedBox(height: 20),
-                      const Divider(),
-                      Center(
-                        child: widget.trybUsuwania
-                            ? TextButton.icon(
-                                onPressed: widget.onFavoritePressed,
-                                icon: const Icon(Icons.close,
-                                    color: Colors.black),
-                                label: const Text("USUŃ",
-                                    style: TextStyle(color: Colors.black)))
-                            : IconButton(
-                                onPressed: widget.onFavoritePressed,
-                                icon: Icon(widget.czyUlubiony
-                                    ? Icons.favorite
-                                    : Icons.favorite_border),
-                                iconSize: 32,
-                                color: Colors.black),
-                      )
-                    ]
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -176,27 +214,31 @@ class _KartaPsaState extends State<KartaPsa> {
     return Container(
       color: Colors.black.withOpacity(0.96),
       padding: const EdgeInsets.all(30),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text("O PSIE",
-              style: GoogleFonts.poppins(color: Colors.grey, letterSpacing: 2)),
-          const SizedBox(height: 10),
-          Text(widget.pies.opis,
-              style: GoogleFonts.poppins(
-                  color: Colors.white, fontSize: 16, height: 1.6)),
-          const SizedBox(height: 30),
-          Center(
-            child: OutlinedButton(
-              style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  side: const BorderSide(color: Colors.white)),
-              onPressed: () => setState(() => _pokazOpis = false),
-              child: const Text("ZAMKNIJ"),
-            ),
-          )
-        ],
+      child: FadeTransition(
+        opacity: _fadeAnimation,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text("O PSIE",
+                style:
+                    GoogleFonts.poppins(color: Colors.grey, letterSpacing: 2)),
+            const SizedBox(height: 10),
+            Text(widget.pies.opis,
+                style: GoogleFonts.poppins(
+                    color: Colors.white, fontSize: 16, height: 1.6)),
+            const SizedBox(height: 30),
+            Center(
+              child: OutlinedButton(
+                style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    side: const BorderSide(color: Colors.white)),
+                onPressed: () => setState(() => _pokazOpis = false),
+                child: const Text("ZAMKNIJ"),
+              ),
+            )
+          ],
+        ),
       ),
     );
   }

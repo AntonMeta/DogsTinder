@@ -13,22 +13,32 @@ class MenuGlowne extends StatefulWidget {
 }
 
 class _MenuGlowneState extends State<MenuGlowne> {
-  // stan filtrów
+  // filters
   String filtrPlec = "";
   String filtrKolor = "";
   int filtrWiek = 20;
 
-  // tmp lista ulubionych
+  // lists
   final List<Pies> _ulubionePsy = [];
+  final Set<int> _odwiedzonePsyIds = {};
 
   // toggle fav pies
   void _przelaczUlubionego(Pies pies) {
     setState(() {
       if (_ulubionePsy.contains(pies)) {
         _ulubionePsy.remove(pies);
+        _odwiedzonePsyIds.remove(pies.id);
       } else {
         _ulubionePsy.add(pies);
+        _odwiedzonePsyIds.add(pies.id);
       }
+    });
+  }
+
+  // seen
+  void _oznaczJakoOdwiedzony(int id) {
+    setState(() {
+      _odwiedzonePsyIds.add(id);
     });
   }
 
@@ -40,16 +50,25 @@ class _MenuGlowneState extends State<MenuGlowne> {
           padding: const EdgeInsets.symmetric(horizontal: 30.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start, // Teksty do lewej
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Spacer(),
-              // TYTUŁ JAK Z CZASOPISMA
               Text(
-                "Dogs\nTinder.",
+                "Dogs",
+                style: GoogleFonts.poppins(
+                  fontSize: 56,
+                  fontWeight: FontWeight.w300,
+                  height: 1.0,
+                  color: Colors.black,
+                ),
+              ),
+              const SizedBox(height: 5),
+              Text(
+                "Tinder.",
                 style: GoogleFonts.poppins(
                   fontSize: 56,
                   fontWeight: FontWeight.w800,
-                  height: 1.0, // Zwarte linie
+                  height: 1.0,
                   color: Colors.black,
                 ),
               ),
@@ -64,7 +83,7 @@ class _MenuGlowneState extends State<MenuGlowne> {
               ),
               const Spacer(),
 
-              // PRZYCISKI (Pełna szerokość)
+              // buttons
               _budujPrzycisk(
                 label: "SZUKAJ PARY",
                 onTap: () {
@@ -76,12 +95,14 @@ class _MenuGlowneState extends State<MenuGlowne> {
                         kolor: filtrKolor,
                         wiek: filtrWiek,
                         ulubionePsy: _ulubionePsy,
+                        odwiedzonePsyIds: _odwiedzonePsyIds,
                         onToggleFavorite: _przelaczUlubionego,
+                        onOdwiedzony: _oznaczJakoOdwiedzony,
                       ),
                     ),
                   );
                 },
-                isPrimary: true, // Czarny przycisk
+                isPrimary: true, 
               ),
               const SizedBox(height: 15),
               _budujPrzycisk(
@@ -102,10 +123,11 @@ class _MenuGlowneState extends State<MenuGlowne> {
                       filtrPlec = wynik['plec'];
                       filtrKolor = wynik['kolor'];
                       filtrWiek = wynik['wiek'];
+                      _odwiedzonePsyIds.clear();
                     });
                   }
                 },
-                isPrimary: false, // Biały przycisk (Outline)
+                isPrimary: false, 
               ),
               const SizedBox(height: 15),
               _budujPrzycisk(
@@ -131,14 +153,13 @@ class _MenuGlowneState extends State<MenuGlowne> {
     );
   }
 
-  // Minimalistyczny widget przycisku
   Widget _budujPrzycisk({
     required String label,
     required VoidCallback onTap,
     required bool isPrimary,
   }) {
     return SizedBox(
-      width: double.infinity, // Rozciągnij na max
+      width: double.infinity, 
       height: 56,
       child: isPrimary
           ? ElevatedButton(

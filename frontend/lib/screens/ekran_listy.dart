@@ -10,7 +10,9 @@ class EkranListy extends StatefulWidget {
   final String kolor;
   final int wiek;
   final List<Pies> ulubionePsy;
+  final Set<int> odwiedzonePsyIds;
   final Function(Pies) onToggleFavorite;
+  final Function(int) onOdwiedzony;
 
   const EkranListy({
     super.key,
@@ -18,7 +20,9 @@ class EkranListy extends StatefulWidget {
     required this.kolor,
     required this.wiek,
     required this.ulubionePsy,
+    required this.odwiedzonePsyIds,
     required this.onToggleFavorite,
+    required this.onOdwiedzony,
   });
 
   @override
@@ -52,10 +56,16 @@ class _EkranListyState extends State<EkranListy> {
         final bodyDecoded = utf8.decode(odpowiedz.bodyBytes);
         final List<dynamic> daneJson = json.decode(bodyDecoded);
 
+        final wszystkiePsy =
+            daneJson.map((json) => Pies.fromJson(json)).toList();
+
+        final przefiltrowane = wszystkiePsy.where((pies) {
+          return !widget.odwiedzonePsyIds.contains(pies.id);
+        }).toList();
+
         setState(() {
-          listaPsow = daneJson.map((json) => Pies.fromJson(json)).toList();
+          listaPsow = przefiltrowane;
           ladowanie = false;
-          _czyKoniec = false;
         });
       } else {
         setState(() {
@@ -77,6 +87,8 @@ class _EkranListyState extends State<EkranListy> {
     CardSwiperDirection direction,
   ) {
     final pies = listaPsow[previousIndex];
+
+    widget.onOdwiedzony(pies.id);
 
     if (direction == CardSwiperDirection.right) {
       if (!widget.ulubionePsy.contains(pies)) {
@@ -106,7 +118,7 @@ class _EkranListyState extends State<EkranListy> {
         foregroundColor: Colors.black,
       ),
       body: ladowanie
-          ? const Center(child: CircularProgressIndicator())
+          ? _budujLoader()
           : blad.isNotEmpty
               ? Center(
                   child: Text(blad, style: const TextStyle(color: Colors.red)))
@@ -164,6 +176,33 @@ class _EkranListyState extends State<EkranListy> {
     );
   }
 
+  Widget _budujLoader() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const SizedBox(
+            width: 50,
+            height: 50,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: Colors.black,
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            "Szukam piesków...",
+            style: TextStyle(
+                color: Colors.grey[400],
+                letterSpacing: 1.5,
+                fontSize: 12,
+                fontWeight: FontWeight.bold),
+          )
+        ],
+      ),
+    );
+  }
+
   Widget _budujEkranKoncowy() {
     return Center(
       child: Column(
@@ -182,7 +221,10 @@ class _EkranListyState extends State<EkranListy> {
           ),
           const SizedBox(height: 30),
           ElevatedButton.icon(
-            onPressed: szukajPsow,
+            onPressed: () {
+              widget.odwiedzonePsyIds.clear();
+              szukajPsow();
+            },
             icon: const Icon(Icons.refresh),
             label: const Text("ODŚWIEŻ"),
             style: ElevatedButton.styleFrom(

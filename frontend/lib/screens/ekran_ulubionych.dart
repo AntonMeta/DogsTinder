@@ -41,15 +41,15 @@ class _EkranUlubionychState extends State<EkranUlubionych> {
                 final pies = widget.ulubionePsy[index];
                 return SizedBox(
                   height:
-                      500, // Wymuszamy wysokość, żeby karta wyglądała tak samo jak w swipowaniu
+                      500, 
                   child: KartaPsa(
                     pies: pies,
-                    czyUlubiony: true, // Tu zawsze jest true
+                    czyUlubiony: true, 
                     trybUsuwania: true,
-                    czySerce: true, // <--- WAŻNE: Włączamy przycisk usuwania!
+                    czySerce: true, 
                     onFavoritePressed: () {
                       widget.onToggleFavorite(pies);
-                      setState(() {}); // Odświeżamy, żeby usunięty pies zniknął
+                      setState(() {}); 
                     },
                   ),
                 );
