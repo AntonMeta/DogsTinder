@@ -8,8 +8,9 @@ class KartaPsa extends StatefulWidget {
   final VoidCallback onFavoritePressed;
   final bool trybUsuwania;
   final bool czySerce;
-
   final double swipeProgress;
+
+  final bool czyToGornaKarta;
 
   const KartaPsa({
     super.key,
@@ -19,6 +20,7 @@ class KartaPsa extends StatefulWidget {
     required this.czySerce,
     this.trybUsuwania = false,
     this.swipeProgress = 0.0,
+    this.czyToGornaKarta = false,
   });
 
   @override
@@ -32,26 +34,51 @@ class _KartaPsaState extends State<KartaPsa>
   late Animation<Offset> _slideAnimation;
   late Animation<double> _fadeAnimation;
 
+  bool _readyToAnimate = false;
+
   @override
   void initState() {
     super.initState();
+
     _animController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
+      value: 0.0,
     );
 
     _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.1),
+      begin: const Offset(0, 0.15),
       end: Offset.zero,
     ).animate(
-        CurvedAnimation(parent: _animController, curve: Curves.easeOutQuad));
+        CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic));
 
     _fadeAnimation = Tween<double>(
       begin: 0.0,
       end: 1.0,
     ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeIn));
 
-    _animController.forward();
+    if (widget.czyToGornaKarta) {
+      _uruchomAnimacje();
+    }
+  }
+
+  @override
+  void didUpdateWidget(KartaPsa oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.czyToGornaKarta && !oldWidget.czyToGornaKarta) {
+      _uruchomAnimacje();
+    }
+  }
+
+  void _uruchomAnimacje() {
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (mounted) {
+        setState(() {
+          _readyToAnimate = true;
+          _animController.forward();
+        });
+      }
+    });
   }
 
   @override
@@ -111,54 +138,58 @@ class _KartaPsaState extends State<KartaPsa>
               alignment: Alignment.bottomLeft,
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(24, 0, 24, 30),
-                child: SlideTransition(
-                  position: _slideAnimation,
-                  child: FadeTransition(
-                    opacity: _fadeAnimation,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(widget.pies.imie,
-                            style: GoogleFonts.poppins(
-                                fontSize: 42,
-                                fontWeight: FontWeight.bold,
-                                height: 1.0)),
-                        Text(widget.pies.rasa.toUpperCase(),
-                            style: GoogleFonts.poppins(
-                                fontSize: 14,
-                                letterSpacing: 2,
-                                color: Colors.grey[600])),
-                        const SizedBox(height: 20),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            _simpleInfo("WIEK", "${widget.pies.wiek} lata"),
-                            _simpleInfo("PŁEĆ", widget.pies.plec),
-                            _simpleInfo("KOLOR", widget.pies.kolor),
-                          ],
-                        ),
-                        if (widget.czySerce) ...[
+                child: Opacity(
+                  opacity: _readyToAnimate ? 1.0 : 0.0,
+                  child: SlideTransition(
+                    position: _slideAnimation,
+                    child: FadeTransition(
+                      opacity: _fadeAnimation,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(widget.pies.imie,
+                              style: GoogleFonts.poppins(
+                                  fontSize: 42,
+                                  fontWeight: FontWeight.bold,
+                                  height: 1.0)),
+                          Text(widget.pies.rasa.toUpperCase(),
+                              style: GoogleFonts.poppins(
+                                  fontSize: 14,
+                                  letterSpacing: 2,
+                                  color: Colors.grey[600])),
                           const SizedBox(height: 20),
-                          const Divider(),
-                          Center(
-                            child: widget.trybUsuwania
-                                ? TextButton.icon(
-                                    onPressed: widget.onFavoritePressed,
-                                    icon: const Icon(Icons.close,
-                                        color: Colors.black),
-                                    label: const Text("USUŃ",
-                                        style: TextStyle(color: Colors.black)))
-                                : IconButton(
-                                    onPressed: widget.onFavoritePressed,
-                                    icon: Icon(widget.czyUlubiony
-                                        ? Icons.favorite
-                                        : Icons.favorite_border),
-                                    iconSize: 32,
-                                    color: Colors.black),
-                          )
-                        ]
-                      ],
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              _simpleInfo("WIEK", "${widget.pies.wiek} lata"),
+                              _simpleInfo("PŁEĆ", widget.pies.plec),
+                              _simpleInfo("KOLOR", widget.pies.kolor),
+                            ],
+                          ),
+                          if (widget.czySerce) ...[
+                            const SizedBox(height: 20),
+                            const Divider(),
+                            Center(
+                              child: widget.trybUsuwania
+                                  ? TextButton.icon(
+                                      onPressed: widget.onFavoritePressed,
+                                      icon: const Icon(Icons.close,
+                                          color: Colors.black),
+                                      label: const Text("USUŃ",
+                                          style:
+                                              TextStyle(color: Colors.black)))
+                                  : IconButton(
+                                      onPressed: widget.onFavoritePressed,
+                                      icon: Icon(widget.czyUlubiony
+                                          ? Icons.favorite
+                                          : Icons.favorite_border),
+                                      iconSize: 32,
+                                      color: Colors.black),
+                            )
+                          ]
+                        ],
+                      ),
                     ),
                   ),
                 ),

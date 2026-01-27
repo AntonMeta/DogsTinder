@@ -12,7 +12,8 @@ class MenuGlowne extends StatefulWidget {
   State<MenuGlowne> createState() => _MenuGlowneState();
 }
 
-class _MenuGlowneState extends State<MenuGlowne> {
+class _MenuGlowneState extends State<MenuGlowne>
+    with SingleTickerProviderStateMixin {
   // filters
   String filtrPlec = "";
   String filtrKolor = "";
@@ -21,6 +22,25 @@ class _MenuGlowneState extends State<MenuGlowne> {
   // lists
   final List<Pies> _ulubionePsy = [];
   final Set<int> _odwiedzonePsyIds = {};
+
+  late AnimationController _animController;
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2000),
+    );
+
+    _animController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
+  }
 
   // toggle fav pies
   void _przelaczUlubionego(Pies pies) {
@@ -53,102 +73,160 @@ class _MenuGlowneState extends State<MenuGlowne> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Spacer(),
-              Text(
-                "Dogs",
-                style: GoogleFonts.poppins(
-                  fontSize: 56,
-                  fontWeight: FontWeight.w300,
-                  height: 1.0,
-                  color: Colors.black,
+              _budujAnimowanyElement(
+                start: 0.0,
+                end: 0.5,
+                child: Text(
+                  "Dogs",
+                  style: GoogleFonts.poppins(
+                    fontSize: 56,
+                    fontWeight: FontWeight.w300,
+                    height: 1.0,
+                    color: Colors.black,
+                  ),
                 ),
               ),
               const SizedBox(height: 5),
-              Text(
-                "Tinder.",
-                style: GoogleFonts.poppins(
-                  fontSize: 56,
-                  fontWeight: FontWeight.w800,
-                  height: 1.0,
-                  color: Colors.black,
+              _budujAnimowanyElement(
+                start: 0.1,
+                end: 0.5,
+                child: Text(
+                  "Tinder.",
+                  style: GoogleFonts.poppins(
+                    fontSize: 56,
+                    fontWeight: FontWeight.w800,
+                    height: 1.0,
+                    color: Colors.black,
+                  ),
                 ),
               ),
               const SizedBox(height: 10),
-              Text(
-                "Znajdź swojego przyjaciela.",
-                style: TextStyle(
-                  fontSize: 18,
-                  color: Colors.grey[500],
-                  fontWeight: FontWeight.w300,
+              _budujAnimowanyElement(
+                start: 0.2,
+                end: 0.6,
+                child: Text(
+                  "Znajdź swojego przyjaciela.",
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: Colors.grey[500],
+                    fontWeight: FontWeight.w300,
+                  ),
                 ),
               ),
               const Spacer(),
 
               // buttons
-              _budujPrzycisk(
-                label: "SZUKAJ PARY",
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => EkranListy(
-                        plec: filtrPlec,
-                        kolor: filtrKolor,
-                        wiek: filtrWiek,
-                        ulubionePsy: _ulubionePsy,
-                        odwiedzonePsyIds: _odwiedzonePsyIds,
-                        onToggleFavorite: _przelaczUlubionego,
-                        onOdwiedzony: _oznaczJakoOdwiedzony,
+              _budujAnimowanyElement(
+                start: 0.4,
+                end: 0.8,
+                child: _budujPrzycisk(
+                  label: "SZUKAJ PARY",
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => EkranListy(
+                          plec: filtrPlec,
+                          kolor: filtrKolor,
+                          wiek: filtrWiek,
+                          ulubionePsy: _ulubionePsy,
+                          odwiedzonePsyIds: _odwiedzonePsyIds,
+                          onToggleFavorite: _przelaczUlubionego,
+                          onOdwiedzony: _oznaczJakoOdwiedzony,
+                        ),
                       ),
-                    ),
-                  );
-                },
-                isPrimary: true, 
+                    );
+                  },
+                  isPrimary: true,
+                ),
               ),
               const SizedBox(height: 15),
-              _budujPrzycisk(
-                label: "FILTRY",
-                onTap: () async {
-                  final wynik = await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => EkranFiltrow(
-                        obecnaPlec: filtrPlec,
-                        obecnyKolor: filtrKolor,
-                        obecnyWiek: filtrWiek,
+              _budujAnimowanyElement(
+                start: 0.5,
+                end: 0.9,
+                child: _budujPrzycisk(
+                  label: "FILTRY",
+                  onTap: () async {
+                    final wynik = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => EkranFiltrow(
+                          obecnaPlec: filtrPlec,
+                          obecnyKolor: filtrKolor,
+                          obecnyWiek: filtrWiek,
+                        ),
                       ),
-                    ),
-                  );
-                  if (wynik != null) {
-                    setState(() {
-                      filtrPlec = wynik['plec'];
-                      filtrKolor = wynik['kolor'];
-                      filtrWiek = wynik['wiek'];
-                      _odwiedzonePsyIds.clear();
-                    });
-                  }
-                },
-                isPrimary: false, 
+                    );
+                    if (wynik != null) {
+                      setState(() {
+                        filtrPlec = wynik['plec'];
+                        filtrKolor = wynik['kolor'];
+                        filtrWiek = wynik['wiek'];
+                        _odwiedzonePsyIds.clear();
+                      });
+                    }
+                  },
+                  isPrimary: false,
+                ),
               ),
               const SizedBox(height: 15),
-              _budujPrzycisk(
-                label: "MOJE ULUBIONE (${_ulubionePsy.length})",
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => EkranUlubionych(
-                        ulubionePsy: _ulubionePsy,
-                        onToggleFavorite: _przelaczUlubionego,
+              _budujAnimowanyElement(
+                start: 0.6,
+                end: 1.0,
+                child: _budujPrzycisk(
+                  label: "MOJE ULUBIONE (${_ulubionePsy.length})",
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => EkranUlubionych(
+                          ulubionePsy: _ulubionePsy,
+                          onToggleFavorite: _przelaczUlubionego,
+                        ),
                       ),
-                    ),
-                  );
-                },
-                isPrimary: false,
+                    );
+                  },
+                  isPrimary: false,
+                ),
               ),
               const SizedBox(height: 40),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _budujAnimowanyElement({
+    required double start,
+    required double end,
+    required Widget child,
+  }) {
+    final slideAnim = Tween<Offset>(
+      begin: const Offset(0, 0.5),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(
+        parent: _animController,
+        curve: Interval(start, end, curve: Curves.easeOutCubic),
+      ),
+    );
+
+    final fadeAnim = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(
+      CurvedAnimation(
+        parent: _animController,
+        curve: Interval(start, end, curve: Curves.easeIn),
+      ),
+    );
+
+    return SlideTransition(
+      position: slideAnim,
+      child: FadeTransition(
+        opacity: fadeAnim,
+        child: child,
       ),
     );
   }
@@ -159,7 +237,7 @@ class _MenuGlowneState extends State<MenuGlowne> {
     required bool isPrimary,
   }) {
     return SizedBox(
-      width: double.infinity, 
+      width: double.infinity,
       height: 56,
       child: isPrimary
           ? ElevatedButton(

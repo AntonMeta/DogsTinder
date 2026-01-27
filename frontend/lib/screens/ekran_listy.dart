@@ -29,19 +29,54 @@ class EkranListy extends StatefulWidget {
   State<EkranListy> createState() => _EkranListyState();
 }
 
-class _EkranListyState extends State<EkranListy> {
+class _EkranListyState extends State<EkranListy>
+    with SingleTickerProviderStateMixin {
   List<Pies> listaPsow = [];
   bool ladowanie = true;
   String blad = '';
   bool _czyKoniec = false;
 
+  int _currentIndex = 0;
+
+  Key _swiperKey = UniqueKey();
+  final CardSwiperController _swiperController = CardSwiperController();
+
+  late AnimationController _loaderController;
+  late Animation<double> _loaderAnimation;
+
   @override
   void initState() {
     super.initState();
+
+    _loaderController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    )..repeat(reverse: true);
+
+    _loaderAnimation = Tween<double>(begin: 1.0, end: 1.3).animate(
+      CurvedAnimation(parent: _loaderController, curve: Curves.easeInOut),
+    );
     szukajPsow();
   }
 
-  Future<void> szukajPsow() async {
+  @override
+  void dispose() {
+    _swiperController.dispose();
+    _loaderController.dispose();
+    super.dispose();
+  }
+
+  Future<void> szukajPsow({bool czyscHistorie = false}) async {
+    if (czyscHistorie) {
+      widget.odwiedzonePsyIds.clear();
+    }
+
+    setState(() {
+      ladowanie = true;
+      _czyKoniec = false;
+      blad = '';
+      _currentIndex = 0;
+    });
     try {
       final queryParams = {
         'wiek': widget.wiek.toString(),
@@ -50,7 +85,12 @@ class _EkranListyState extends State<EkranListy> {
       };
       final uri = Uri.http('localhost:8000', '/szukaj', queryParams);
 
-      final odpowiedz = await http.get(uri);
+      final results = await Future.wait([
+        http.get(uri),
+        Future.delayed(const Duration(milliseconds: 1500)),
+      ]);
+
+      final odpowiedz = results[0] as http.Response;
 
       if (odpowiedz.statusCode == 200) {
         final bodyDecoded = utf8.decode(odpowiedz.bodyBytes);
@@ -60,12 +100,17 @@ class _EkranListyState extends State<EkranListy> {
             daneJson.map((json) => Pies.fromJson(json)).toList();
 
         final przefiltrowane = wszystkiePsy.where((pies) {
-          return !widget.odwiedzonePsyIds.contains(pies.id);
+          final bool czyOdwiedzony = widget.odwiedzonePsyIds.contains(pies.id);
+          final bool czyUlubiony =
+              widget.ulubionePsy.any((p) => p.id == pies.id);
+
+          return !czyOdwiedzony && !czyUlubiony;
         }).toList();
 
         setState(() {
           listaPsow = przefiltrowane;
           ladowanie = false;
+          _swiperKey = UniqueKey();
         });
       } else {
         setState(() {
@@ -89,6 +134,12 @@ class _EkranListyState extends State<EkranListy> {
     final pies = listaPsow[previousIndex];
 
     widget.onOdwiedzony(pies.id);
+
+    if (currentIndex != null) {
+      setState(() {
+        _currentIndex = currentIndex;
+      });
+    }
 
     if (direction == CardSwiperDirection.right) {
       if (!widget.ulubionePsy.contains(pies)) {
@@ -132,7 +183,11 @@ class _EkranListyState extends State<EkranListy> {
                             children: [
                               Flexible(
                                 child: CardSwiper(
+                                  key: _swiperKey,
+                                  controller: _swiperController,
                                   cardsCount: listaPsow.length,
+                                  numberOfCardsDisplayed:
+                                      listaPsow.length > 1 ? 2 : 1,
                                   isLoop: false,
                                   onEnd: () {
                                     setState(() {
@@ -144,6 +199,9 @@ class _EkranListyState extends State<EkranListy> {
                                   onSwipe: _obslugaSwipe,
                                   cardBuilder: (context, index,
                                       percentThresholdX, percentThresholdY) {
+                                    if (index >= listaPsow.length) {
+                                      return const SizedBox();
+                                    }
                                     final pies = listaPsow[index];
                                     return KartaPsa(
                                       key: ValueKey(pies.id),
@@ -155,6 +213,7 @@ class _EkranListyState extends State<EkranListy> {
                                           widget.onToggleFavorite(pies),
                                       swipeProgress:
                                           percentThresholdX as double,
+                                      czyToGornaKarta: index == _currentIndex,
                                     );
                                   },
                                 ),
@@ -181,11 +240,11 @@ class _EkranListyState extends State<EkranListy> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const SizedBox(
-            width: 50,
-            height: 50,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
+          ScaleTransition(
+            scale: _loaderAnimation,
+            child: const Icon(
+              Icons.pets,
+              size: 60,
               color: Colors.black,
             ),
           ),
@@ -222,8 +281,7 @@ class _EkranListyState extends State<EkranListy> {
           const SizedBox(height: 30),
           ElevatedButton.icon(
             onPressed: () {
-              widget.odwiedzonePsyIds.clear();
-              szukajPsow();
+              szukajPsow(czyscHistorie: true);
             },
             icon: const Icon(Icons.refresh),
             label: const Text("ODŚWIEŻ"),
