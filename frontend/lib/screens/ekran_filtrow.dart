@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
+const String SERVER_IP = '192.168.33.24:8000';
+
 class EkranFiltrow extends StatefulWidget {
   final String obecnaPlec;
   final String obecnyKolor;
@@ -36,7 +38,7 @@ class _EkranFiltrowState extends State<EkranFiltrow> {
   //do autocomplete przy kolorze
   Future<void> pobierzKoloryZSerwera() async {
     try {
-      final url = Uri.parse('http://localhost:8000/kolory');
+      final url = Uri.http(SERVER_IP, '/kolory');
       final odpowiedz = await http.get(url);
       if (odpowiedz.statusCode == 200) {
         final List<dynamic> dane = jsonDecode(utf8.decode(odpowiedz.bodyBytes));

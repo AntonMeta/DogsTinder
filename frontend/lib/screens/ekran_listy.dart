@@ -5,6 +5,8 @@ import 'package:http/http.dart' as http;
 import 'package:frontend/models/pies.dart';
 import 'package:frontend/widgets/karta_psa.dart';
 
+const String SERVER_IP = '192.168.33.24:8000';
+
 class EkranListy extends StatefulWidget {
   final String plec;
   final String kolor;
@@ -83,7 +85,7 @@ class _EkranListyState extends State<EkranListy>
         'plec': widget.plec,
         'kolor': widget.kolor,
       };
-      final uri = Uri.http('localhost:8000', '/szukaj', queryParams);
+      final uri = Uri.http(SERVER_IP, '/szukaj', queryParams);
 
       final results = await Future.wait([
         http.get(uri),
@@ -212,7 +214,8 @@ class _EkranListyState extends State<EkranListy>
                                       onFavoritePressed: () =>
                                           widget.onToggleFavorite(pies),
                                       swipeProgress:
-                                          percentThresholdX as double,
+                                          (percentThresholdX as num? ?? 0.0)
+                                              .toDouble(),
                                       czyToGornaKarta: index == _currentIndex,
                                     );
                                   },

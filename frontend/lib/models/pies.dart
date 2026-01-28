@@ -21,12 +21,12 @@ class Pies {
 
   factory Pies.fromJson(Map<String, dynamic> json) {
     return Pies(
-      id: json['id'],
-      imie: json['imie'],
-      rasa: json['rasa'],
-      wiek: json['wiek'],
-      plec: json['plec'],
-      kolor: json['kolor'],
+      id: (json['id'] as num?)?.toInt() ?? 0,
+      imie: json['imie'] ?? "Bez imienia",
+      rasa: json['rasa'] ?? "Nieznana",
+      wiek: (json['wiek'] as num?)?.toInt() ?? 0,
+      plec: json['plec'] ?? "Nieznana",
+      kolor: json['kolor'] ?? "Nieznany",
       opis: json['opis'] ?? "Brak opisu.",
       zdjecieUrl: json['zdjecie_url'] ?? "https://placedog.net/500/500",
     );
