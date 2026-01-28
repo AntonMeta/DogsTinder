@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:frontend/models/pies.dart';
 import 'package:frontend/widgets/karta_psa.dart';
 
-const String SERVER_IP = '192.168.33.24:8000';
+const String SERVER_IP = '172.20.10.2:8000';
 
 class EkranListy extends StatefulWidget {
   final String plec;

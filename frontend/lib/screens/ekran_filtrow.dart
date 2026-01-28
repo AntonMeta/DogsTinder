@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
-const String SERVER_IP = '192.168.33.24:8000';
+const String SERVER_IP = '172.20.10.2:8000';
 
 class EkranFiltrow extends StatefulWidget {
   final String obecnaPlec;

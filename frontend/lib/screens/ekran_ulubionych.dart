@@ -47,6 +47,7 @@ class _EkranUlubionychState extends State<EkranUlubionych> {
                     czyUlubiony: true, 
                     trybUsuwania: true,
                     czySerce: true, 
+                    czyToGornaKarta: true,
                     onFavoritePressed: () {
                       widget.onToggleFavorite(pies);
                       setState(() {}); 
